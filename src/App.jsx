@@ -67,6 +67,7 @@ export default function App() {
 
     <section id="main_content" className=" ml-18 mt-18">
       <section id="recommendation" className="font-[calibri] flex flex-wrap">
+        <span className="bg-black px-4 py-1 rounded-sm m-1 text-white">All</span>
         <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Calculus</span>
         <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Differential equation</span>
         <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">{"Kirchoff's law"}</span>
