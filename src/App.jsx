@@ -68,7 +68,6 @@ export default function App() {
   const [Videos, setVideos] = useState()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const eurl = `https://www.googleapis.com/youtube/v3/search?part=snippet&videoCategory=27&q=${encodeURIComponent(search)}&type=video&maxResults=20&key=${API_KEY}`
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&videoCategoryId=27&q=${encodeURIComponent(search)}&type=video&maxResults=20&key=${API_KEY}`;
 
   useEffect(() => {
@@ -102,9 +101,11 @@ export default function App() {
       })
     }
   }, [called])
+
+
   function GetNew({ date }) {
     let today = new Date()
-    if (date.getYear() === today.getYear()) {
+    if (date.getFullYear() === today.getFullYear()) {
 
       if (date.getMonth() !== today.getMonth()) {
         return `${today.getMonth() - date.getMonth()} months ago`
@@ -125,22 +126,29 @@ export default function App() {
       }
     }
 
-    else if (date.getYear() !== today.getYear()) {
-      return `${today.getYear() - date.getYear()} years ago`
+    else if (date.getFullYear() !== today.getFullYear()) {
+      return `${today.getFullYear() - date.getFullYear()} years ago`
     }
   }
+  const recommended = [
+    "All", "Calculus", "Differential equation", "Kirchoffs law", "Big bang theory", "Java programming", "Indices", "Mail merge", "Descrete structures", "Trigonometry"
+  ]
 
-  function Test() {
-    let today = new Date()
-    if (today.getDate() > 12) {
-      return <p>Greater than 12</p>
-    } else {
-      return <p>Less than 12</p>
-    }
-  }
-  const date = new Date(2025, 2, 12, 12)
-  console.log(date)
+  const [tabVideos, setTabVideos] = useState({})
+  useEffect(() => {
+    recommended.forEach((element, index) => {
+      fetch(`/json.json`).then((response) => {
+        return response.json()
+      }).then((data) => {
+        setTabVideos((prevVideos) => ({ ...prevVideos, [element]: { ...data, [element]: element } }))
+      }).catch((err) => {
+        console.log(err.message)
+      })
+    })
+  }, [])
+  const [tab, setTab] = useState("All")
   console.log(loading)
+  console.log(tabVideos)
   return <>
     <Navbar called={called} setIsacalled={setIscalled} />
 
@@ -148,16 +156,15 @@ export default function App() {
 
     <section id="main_content" className=" ml-18 mt-18">
       <section id="recommendation" className="font-[calibri] flex flex-wrap">
-        <span className="bg-black px-4 py-1 rounded-sm m-1 text-white">All</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Calculus</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Differential equation</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">{"Kirchoff's law"}</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Mail merge</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Indices</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Descrete structures</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">The big bang</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Java Programming</span>
-        <span className="bg-gray-200 px-4 py-1 rounded-sm m-1">Trigonometry</span>
+        {
+          recommended.map((current, index) => {
+            return current === tab ? <span key={index} className="bg-black text-white px-4 py-1 rounded-sm m-1">{current} </span> :
+              <span key={index} onClick={() => {
+                setTab(current)
+                console.log(tabVideos[current])
+              }} className="bg-gray-200 px-4 py-1 rounded-sm m-1">{current} </span>
+          })
+        }
       </section>
 
 
@@ -168,8 +175,8 @@ export default function App() {
               const date = new Date(current.snippet.publishedAt)
               return <div key={index} className="font-[calibri] m-3">
                 <div
-                  className="bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
-                  style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+                  className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
+                // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
                 >
                   <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
                     1:30
@@ -189,8 +196,8 @@ export default function App() {
               const date = new Date(current.snippet.publishedAt)
               return <div key={index} className="font-[calibri] m-3">
                 <div
-                  className="bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
-                  style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+                  className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
+                // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
                 >
                   <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
                     1:30

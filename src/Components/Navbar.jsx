@@ -4,7 +4,6 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { useContext } from "react";
 export function Navbar({ setIsacalled }) {
   const { search, SearchHandler } = useContext(SearchContext)
-  console.log(search)
   return (<nav className="bg-white z-10 w-full flex h-16 items-center justify-between fixed top-0 left-0">
     <div className="logo  text-3xl text-blue-600 font-semibold pl-8">
       Brillit.io
