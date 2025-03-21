@@ -6,6 +6,7 @@ import "../src/assets/bg.png"
 import { useContext, useEffect, useState } from "react"
 import { SearchContext } from "./Context/SearchContext"
 import { Loader } from "./Components/Loader"
+import { Link, useNavigate } from "react-router-dom"
 // import { faFacebook } from "@fortawesome/free-brands-svg-icons"
 export let videos = [
   {
@@ -64,6 +65,7 @@ videos = videos.concat(videos)
 
 export default function App() {
   const { search } = useContext(SearchContext)
+  const [active, setActive] = useState("tab")
   const [called, setIscalled] = useState()
   const [Videos, setVideos] = useState()
   const [loading, setLoading] = useState(true)
@@ -76,7 +78,6 @@ export default function App() {
     }).then((data) => {
       setVideos(data.items)
       setLoading(false)
-      console.log(data.items)
     }).catch((err) => {
       setError(err.message)
       setLoading(false)
@@ -86,7 +87,7 @@ export default function App() {
 
   const [searchedVideos, setSearchedVideos] = useState([])
   useEffect(() => {
-    if (searchedVideos.length !== 0 || search.length > 1) {
+    if (search.length > 0) {
       setLoading(true)
       fetch(url).then((response) => {
         return response.json()
@@ -102,7 +103,7 @@ export default function App() {
     }
   }, [called])
 
-
+  console.log(searchedVideos.length, search.length)
   function GetNew({ date }) {
     let today = new Date()
     if (date.getFullYear() === today.getFullYear()) {
@@ -134,23 +135,49 @@ export default function App() {
     "All", "Calculus", "Differential equation", "Kirchoffs law", "Big bang theory", "Java programming", "Indices", "Mail merge", "Descrete structures", "Trigonometry"
   ]
 
+  // const { currentTab, setCurrentTab } = useContext(TabContext)
+
   const [tabVideos, setTabVideos] = useState({})
+
+  // useEffect(() => {
+  //   recommended.forEach((element, index) => {
+  //     fetch(`/json.json`).then((response) => {
+  //       return response.json()
+  //     }).then((data) => {
+  //       setTabVideos((prevVideos) => ({ ...prevVideos, [element]: { ...data, [element]: element } }))
+  //     }).catch((err) => {
+  //       console.log(err.message)
+  //     })
+  //   })
+  // }, [])
+
+  const [tab, setTab] = useState("All")
+
   useEffect(() => {
-    recommended.forEach((element, index) => {
-      fetch(`/json.json`).then((response) => {
+    // fetch resources using the current value of {tab}
+    // Replace run time fetching data with this
+    if (!tabVideos[tab]) {
+      console.log(tab)
+      fetch("/json.json").then((response) => {
+        setLoading(true)
         return response.json()
       }).then((data) => {
-        setTabVideos((prevVideos) => ({ ...prevVideos, [element]: { ...data, [element]: element } }))
+        setTabVideos((prevs) => ({ ...prevs, [tab]: { ...data, [tab]: tab } }))
+        setLoading(false)
       }).catch((err) => {
+        setError(err.message)
+        setLoading(false)
         console.log(err.message)
       })
-    })
-  }, [])
-  const [tab, setTab] = useState("All")
-  console.log(loading)
-  console.log(tabVideos)
+    }
+  }, [tab])
+
+  const navigate = useNavigate()
+  console.log(active)
+  console.log(tabVideos[tab]?.items)
+  // console.log(loading)
   return <>
-    <Navbar called={called} setIsacalled={setIscalled} />
+    <Navbar called={called} setIsacalled={setIscalled} setActive={setActive} />
 
     <Sidebar faHome={faHome} faSnowflake={faSnowflake} faCircleUser={faCircleUser} />
 
@@ -161,7 +188,9 @@ export default function App() {
             return current === tab ? <span key={index} className="bg-black text-white px-4 py-1 rounded-sm m-1">{current} </span> :
               <span key={index} onClick={() => {
                 setTab(current)
-                console.log(tabVideos[current])
+                setActive("tab")
+                setError(null)
+                // console.log(tabVideos[current])
               }} className="bg-gray-200 px-4 py-1 rounded-sm m-1">{current} </span>
           })
         }
@@ -170,31 +199,33 @@ export default function App() {
 
       <section className="flex flex-wrap">
         {
-          loading ? <Loader /> : error ? error : searchedVideos.length !== 0 ?
-            searchedVideos.map((current, index) => {
-              const date = new Date(current.snippet.publishedAt)
-              return <div key={index} className="font-[calibri] m-3">
-                <div
-                  className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
-                // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
-                >
-                  <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
-                    1:30
-                  </span>
-                </div>
+          loading ? <Loader /> : error ? error : active == "tab" ? tabVideos[tab]?.items.map((current, index) => {
+            const date = new Date(current.snippet.publishedAt)
+            return <div onClick={() => {
+              navigate("/videos")
+            }}
+              key={index} className="font-[calibri] m-3 hover:scale-[1.08] transition duration-300">
+              <div
+                className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
+              // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+              >
+                <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
+                  1:30
+                </span>
+              </div>
 
-                <div>
-                  <p className="font-medium text-[15.5px]">{current.snippet.title.slice(0, 30)}</p>
-                  <div className="flex justify-between text-[13px] text-gray-700">
-                    <p>{current.snippet.channelTitle}</p>
-                    <p>{<GetNew date={date} />}</p>
-                  </div>
+              <div>
+                <p className="font-medium text-[15.5px]">{current.snippet.title.slice(0, 30)}</p>
+                <div className="flex justify-between text-[13px] text-gray-700">
+                  <p>{current.snippet.channelTitle}</p>
+                  <p>{<GetNew date={date} />}</p>
                 </div>
               </div>
-            }) :
-            Videos.map((current, index) => {
+            </div>
+          }) :
+            active == "search" ? searchedVideos.map((current, index) => {
               const date = new Date(current.snippet.publishedAt)
-              return <div key={index} className="font-[calibri] m-3">
+              return <div key={index} className="font-[calibri] m-3 hover:scale-[1.08] transition duration-300">
                 <div
                   className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
                 // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
@@ -213,6 +244,7 @@ export default function App() {
                 </div>
               </div>
             })
+              : null
         }
       </section>
     </section>
