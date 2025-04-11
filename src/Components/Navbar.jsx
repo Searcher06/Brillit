@@ -1,9 +1,22 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { SearchContext } from "../Context/SearchContext";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faSliders } from "@fortawesome/free-solid-svg-icons";
 import { useContext } from "react";
-export function Navbar({ setIsacalled, setActive }) {
+import { CallContext } from "../Context/CallContext";
+import { useMatch, useNavigate } from "react-router-dom";
+import { ActiveContext } from "../Context/ActiveContext";
+
+export function Navbar() {
   const { search, SearchHandler } = useContext(SearchContext)
+  const { setIscalled } = useContext(CallContext)
+  const { setActive } = useContext(ActiveContext)
+  const isVideoPage = useMatch(`/videos/:id`)
+  const navigate = useNavigate()
+  function navigator(param) {
+    if (param) {
+      navigate("/")
+    }
+  }
   return (<nav className="bg-white z-10 w-full flex h-16 items-center justify-between fixed top-0 left-0">
     <div className="logo  text-3xl text-blue-600 font-semibold pl-8">
       Brillit.io
@@ -14,8 +27,9 @@ export function Navbar({ setIsacalled, setActive }) {
       }} value={search}
         placeholder="Search" className="h-11 bg-gray-100 pl-5 outline-0 w-120 rounded-l-full" />
       <button onClick={() => {
-        setIsacalled((prevState) => !prevState)
+        setIscalled((prevState) => !prevState)
         setActive("search")
+        navigator(navigate)
         console.log("executed")
       }} className="w-14 bg-blue-600 h-11 rounded-r-full">
         <FontAwesomeIcon icon={faSearch} className="text-white" />

@@ -6,8 +6,13 @@ import "../src/assets/bg.png"
 import { useContext, useEffect, useState } from "react"
 import { SearchContext } from "./Context/SearchContext"
 import { Loader } from "./Components/Loader"
-import { Link, useNavigate } from "react-router-dom"
-// import { faFacebook } from "@fortawesome/free-brands-svg-icons"
+import { useNavigate } from "react-router-dom"
+import { CallContext } from "./Context/CallContext"
+import { ActiveContext } from "./Context/ActiveContext"
+import { NetworkError } from "./Components/NetworkError"
+import { searchedVideosContext } from "./Context/searchVideosContext"
+import FormatYouTubeDuration from "./Components/FormatTime"
+import { GetNew } from "./Components/FormatDate"
 export let videos = [
   {
     img: "/src/assets/bg.png",
@@ -63,38 +68,56 @@ export let videos = [
 const API_KEY = "AIzaSyD6IZSWM5uPuporGCKky36AZYe5DnZKyoc"
 videos = videos.concat(videos)
 
+
 export default function App() {
   const { search } = useContext(SearchContext)
-  const [active, setActive] = useState("tab")
-  const [called, setIscalled] = useState()
-  const [Videos, setVideos] = useState()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&videoCategoryId=27&q=${encodeURIComponent(search)}&type=video&maxResults=20&key=${API_KEY}`;
+  const url = `https://www.googleapis.com/youtube/v3/search?part=id&videoCategoryId=27&q=${encodeURIComponent(search)}&type=video&maxResults=50&key=${API_KEY}`;
+  const { called } = useContext(CallContext)
 
-  useEffect(() => {
-    fetch("/json.json").then((response) => {
-      return response.json()
-    }).then((data) => {
-      setVideos(data.items)
-      setLoading(false)
-    }).catch((err) => {
-      setError(err.message)
-      setLoading(false)
-      console.log(err.message)
-    })
-  }, [])
+  // useEffect(() => {
+  //   fetch(`https://www.googleapis.com/youtube/v3/search?part=id&q=programming&type=video&maxResults=20&key=${API_KEY}`).then((response) => {
+  //     return response.json()
+  //   }).then((data) => {
+  //     console.log("Fetched the searched videos", data)
+  //     let ids = data.items.map((current) => {
+  //       return current.id.videoId
+  //     }).toString()
+  //     fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ids}&key=${API_KEY}`).then((response) => {
+  //       return response.json()
+  //     }).then((data) => {
+  //       console.log("Fetched the video duration", data)
+  //     }).catch((err) => {
+  //       console.log(err.message)
+  //     })
+  //   }).catch((err) => {
+  //     console.log(err.message)
+  //   })
+  // }, [])
 
-  const [searchedVideos, setSearchedVideos] = useState([])
+  const { searchedVideos, setSearchedVideos } = useContext(searchedVideosContext)
   useEffect(() => {
     if (search.length > 0) {
       setLoading(true)
       fetch(url).then((response) => {
         return response.json()
       }).then((data) => {
-        setSearchedVideos(data.items)
-        setLoading(false)
-        console.log(data.items)
+        let ids = data.items.map((current) => {
+          return current.id.videoId
+        }).toString()
+        fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${ids}&key=${API_KEY}`).then((response) => {
+          return response.json()
+        }).then((data) => {
+          setSearchedVideos(data.items.filter((current) => {
+            return current.snippet.categoryId === '26' || current.snippet.categoryId === '27'
+          }))
+          setLoading(false)
+        }).catch((err) => {
+          setError(err.message)
+          setLoading(false)
+          console.log(err.message)
+        })
       }).catch((err) => {
         setError(err.message)
         setLoading(false)
@@ -104,80 +127,43 @@ export default function App() {
   }, [called])
 
   console.log(searchedVideos.length, search.length)
-  function GetNew({ date }) {
-    let today = new Date()
-    if (date.getFullYear() === today.getFullYear()) {
 
-      if (date.getMonth() !== today.getMonth()) {
-        return `${today.getMonth() - date.getMonth()} months ago`
-      }
-
-      if (date.getMonth() === today.getMonth()) {
-        if (date.getDate() === today.getDate()) {
-          if (date.getHours() === today.getHours()) {
-            return `${today.getMinutes() - date.getMinutes()} minutes ago`
-          }
-          else if (date.getHours() !== today.getHours()) {
-            return `${today.getHours() - date.getHours()} hours ago`
-          }
-        }
-        else if (date.getDate() !== today.getDate()) {
-          return `${today.getDate() - date.getDate()} days ago `
-        }
-      }
-    }
-
-    else if (date.getFullYear() !== today.getFullYear()) {
-      return `${today.getFullYear() - date.getFullYear()} years ago`
-    }
-  }
   const recommended = [
     "All", "Calculus", "Differential equation", "Kirchoffs law", "Big bang theory", "Java programming", "Indices", "Mail merge", "Descrete structures", "Trigonometry"
   ]
-
-  // const { currentTab, setCurrentTab } = useContext(TabContext)
-
   const [tabVideos, setTabVideos] = useState({})
-
-  // useEffect(() => {
-  //   recommended.forEach((element, index) => {
-  //     fetch(`/json.json`).then((response) => {
-  //       return response.json()
-  //     }).then((data) => {
-  //       setTabVideos((prevVideos) => ({ ...prevVideos, [element]: { ...data, [element]: element } }))
-  //     }).catch((err) => {
-  //       console.log(err.message)
-  //     })
-  //   })
-  // }, [])
-
   const [tab, setTab] = useState("All")
 
   useEffect(() => {
-    // fetch resources using the current value of {tab}
-    // Replace run time fetching data with this
     if (!tabVideos[tab]) {
       console.log(tab)
-      fetch("/json.json").then((response) => {
+      fetch("/duration.json").then((response) => {
         setLoading(true)
         return response.json()
-      }).then((data) => {
-        setTabVideos((prevs) => ({ ...prevs, [tab]: { ...data, [tab]: tab } }))
-        setLoading(false)
-      }).catch((err) => {
-        setError(err.message)
-        setLoading(false)
-        console.log(err.message)
       })
+        .then((data) => {
+          setTabVideos((prevs) => ({
+            ...prevs, [tab]: {
+              ...data, items: data.items.filter((current) => {
+                return current.snippet.categoryId === '26' || current.snippet.categoryId === '27'
+              }), [tab]: tab
+            }
+          }))
+          setLoading(false)
+        })
+        .catch((err) => {
+          setError(err.message)
+          setLoading(false)
+          console.log(err.message)
+        })
     }
   }, [tab])
 
   const navigate = useNavigate()
-  console.log(active)
-  console.log(tabVideos[tab]?.items)
-  // console.log(loading)
+  const { active, setActive } = useContext(ActiveContext)
+  console.log(tabVideos)
   return <>
-    <Navbar called={called} setIsacalled={setIscalled} setActive={setActive} />
+    <Navbar />
 
     <Sidebar faHome={faHome} faSnowflake={faSnowflake} faCircleUser={faCircleUser} />
 
@@ -197,27 +183,29 @@ export default function App() {
       </section>
 
 
-      <section className="flex flex-wrap">
+      <section className={`flex flex-wrap`}>
         {
-          loading ? <Loader /> : error ? error : active == "tab" ? tabVideos[tab]?.items.map((current, index) => {
+          loading ? <Loader /> : error ? <NetworkError /> : active == "tab" ? tabVideos[tab]?.items.map((current, index) => {
             const date = new Date(current.snippet.publishedAt)
+            const isoDuration = current.contentDetails.duration
             return <div onClick={() => {
-              navigate("/videos")
+              navigate(`/videos/${current.id}`)
             }}
-              key={index} className="font-[calibri] m-3 hover:scale-[1.08] transition duration-300">
+              key={index} className="font-[calibri] m-3 hover:scale-[1.05] transition duration-300">
               <div
-                className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
-              // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+                className=" bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
+                style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+              // bg-[url('/src/assets/bg.png')]
               >
                 <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
-                  1:30
+                  {<FormatYouTubeDuration isoDuration={isoDuration} />}
                 </span>
               </div>
 
               <div>
-                <p className="font-medium text-[15.5px]">{current.snippet.title.slice(0, 30)}</p>
+                <p className="font-medium text-[15.5px]">{current.snippet.title.slice(0, 30) + '...'}</p>
                 <div className="flex justify-between text-[13px] text-gray-700">
-                  <p>{current.snippet.channelTitle}</p>
+                  <p>{current.snippet.channelTitle.slice(0, 30)}</p>
                   <p>{<GetNew date={date} />}</p>
                 </div>
               </div>
@@ -225,13 +213,17 @@ export default function App() {
           }) :
             active == "search" ? searchedVideos.map((current, index) => {
               const date = new Date(current.snippet.publishedAt)
-              return <div key={index} className="font-[calibri] m-3 hover:scale-[1.08] transition duration-300">
+              const isoDuration = current.contentDetails.duration
+              return <div key={index} className="font-[calibri] m-3 hover:scale-[1.05] transition duration-300">
                 <div
-                  className="bg-[url('/src/assets/bg.png')] bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
-                // style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
+                  onClick={() => {
+                    navigate(`/videos/${current.id}`)
+                  }}
+                  className=" bg-center rounded-sm bg-cover h-40 w-70 flex items-end justify-end"
+                  style={{ backgroundImage: `url(${current.snippet.thumbnails.medium.url})` }}
                 >
                   <span className="text-sm text-white font-[calibri] bg-black/80 rounded-xs px-1 py-0 mb-1 mr-1">
-                    1:30
+                    {<FormatYouTubeDuration isoDuration={isoDuration} />}
                   </span>
                 </div>
 
